@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:onecall_doctor/models/appointment_model.dart';
@@ -5,6 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:onecall_doctor/providers/auth_provider.dart';
 import 'package:onecall_doctor/screens/call_screen.dart';
 import 'package:onecall_doctor/services/appointment_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path/path.dart' as p;
 
 class AppointmentCard extends ConsumerStatefulWidget {
   final Appointment appointment;
@@ -23,17 +28,92 @@ class AppointmentCard extends ConsumerStatefulWidget {
 class _AppointmentCardState extends ConsumerState<AppointmentCard> {
   bool _isExpanded = false;
 
+  Future<void> _handleFile(String pathOrUrl) async {
+    try {
+      // 1. If it's already a full HTTP URL
+      if (pathOrUrl.startsWith('http')) {
+        final Uri url = Uri.parse(pathOrUrl);
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        } else {
+          _showError("Could not open this link");
+        }
+        return;
+      }
+
+      // 2. If it's a Firebase Storage Path (e.g., 'health_files/abc.jpg')
+      // OR if it's a local path from patient device, we try to fetch it from storage
+      // using the filename as a fallback.
+
+      String fileName = p.basename(pathOrUrl);
+
+      // Show loading
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Downloading file..."), duration: Duration(seconds: 2)),
+      );
+
+      // Attempt to download from Firebase Storage
+      // We'll try to find the file in a 'health_files' or similar folder if it's just a name
+      Reference ref;
+      if (pathOrUrl.contains('/')) {
+        ref = FirebaseStorage.instance.ref(pathOrUrl);
+      } else {
+        ref = FirebaseStorage.instance.ref().child('health_files').child(fileName);
+      }
+
+      final Directory tempDir = await getTemporaryDirectory();
+      final File tempFile = File('${tempDir.path}/$fileName');
+
+      await ref.writeToFile(tempFile);
+
+      // Open the downloaded file
+      // final result = await OpenFile.open(tempFile.path);
+      // if (result.type != ResultType.done) {
+      //   _showError("Could not open file: ${result.message}");
+      // }
+
+    } catch (e) {
+      debugPrint('Error handling file: $e');
+      // If download failed, it might be because the patient saved a local path incorrectly
+      if (pathOrUrl.contains('/data/user/0/')) {
+        _showLocalPathError();
+      } else {
+        _showError("Error: $e");
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showLocalPathError() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("File Unreachable"),
+        content: const Text(
+            "This file was saved as a local path on the patient's device and is not available in the cloud. \n\nPlease ask the patient to re-upload the file."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appointment = widget.appointment;
     final isCompleted = appointment.status == 'completed';
-    final isUpcoming = appointment.status == 'upcoming';
+    final isUpcoming = appointment.status == 'upcoming' || appointment.status == 'accepted';
 
     final statusColor =
         isCompleted ? const Color(0xffE8F5E9) : const Color(0xffFFF3E0);
     final statusTextColor =
         isCompleted ? const Color(0xff3A643B) : const Color(0xffE65100);
-    final statusText = isCompleted ? "Completed" : "Upcoming";
+    final statusText = isCompleted ? "Completed" : (appointment.status == 'accepted' ? "Accepted" : "Upcoming");
 
     final formattedDate =
         DateFormat('EEEE, dd/MM/yyyy').format(appointment.date);
@@ -135,84 +215,142 @@ class _AppointmentCardState extends ConsumerState<AppointmentCard> {
                   _buildDetailRow('Severity:', '${appointment.severity}/3.0'),
                   _buildDetailRow('Duration:',
                       '${appointment.duration} ${appointment.durationType}'),
+                  const SizedBox(height: 12),
+                  const Text('Description:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(
+                    appointment.description ?? 'No description provided',
+                    style: TextStyle(color: Colors.grey[800]),
+                  ),
                   const SizedBox(height: 16),
-                  
-                  const SizedBox(height: 16),
-                  if (isUpcoming) // Added check
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (isCompleted) return;
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Cancel Appointment"),
-                            content: const Text(
-                                "Are you sure you want to cancel this appointment? \n\nThis will initiate a 100% refund to the patient."),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("No"),
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  Navigator.pop(context); // Close Confirmation
-                                  try {
-                                    // Show loading
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) => const Center(child: CircularProgressIndicator()),
-                                    );
-
-                                    final user = ref.read(firebaseAuthProvider).currentUser;
-                                    final doctorName = user?.displayName ?? "Doctor";
-
-                                    await AppointmentService().cancelAppointment(
-                                      appointment.id,
-                                      appointment.doctorId,
-                                      appointment.patientId,
-                                      appointment.price,
-                                      appointment.userEmail,
-                                      doctorName,
-                                      appointment.date,
-                                    );
-
-                                    if (context.mounted) {
-                                      Navigator.pop(context); // Close Loading
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("Appointment cancelled. Refund processing.")),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      Navigator.pop(context); // Close Loading
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("Failed to cancel: $e")),
-                                      );
-                                    }
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text("Yes, Cancel"),
-                              ),
-                            ],
+                  const Text('Health Files:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  if (appointment.healthFiles != null &&
+                      appointment.healthFiles!.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: appointment.healthFiles!.map((path) {
+                        return InkWell(
+                          onTap: () => _handleFile(path),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.shade100),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.insert_drive_file,
+                                    size: 16, color: Colors.blue),
+                                SizedBox(width: 6),
+                                Text("Health File",
+                                    style: TextStyle(
+                                        color: Colors.blue,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500)),
+                              ],
+                            ),
                           ),
                         );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade50,
-                        foregroundColor: Colors.red,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      }).toList(),
+                    )
+                  else
+                    const Text("No health files uploaded",
+                        style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  if (isUpcoming && appointment.status != 'accepted')
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (isCompleted) return;
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Cancel Appointment"),
+                              content: const Text(
+                                  "Are you sure you want to cancel this appointment? \n\nThis will initiate a 100% refund to the patient."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("No"),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    Navigator.pop(context); // Close Confirmation
+                                    try {
+                                      // Show loading
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) => const Center(
+                                            child: CircularProgressIndicator()),
+                                      );
+
+                                      final user = ref
+                                          .read(firebaseAuthProvider)
+                                          .currentUser;
+                                      final doctorName =
+                                          user?.displayName ?? "Doctor";
+
+                                      await AppointmentService()
+                                          .cancelAppointment(
+                                        appointment.id,
+                                        appointment.doctorId,
+                                        appointment.patientId,
+                                        appointment.price,
+                                        appointment.userEmail,
+                                        doctorName,
+                                        appointment.date,
+                                      );
+
+                                      if (context.mounted) {
+                                        Navigator.pop(context); // Close Loading
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  "Appointment cancelled. Refund processing.")),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        Navigator.pop(context); // Close Loading
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text("Failed to cancel: $e")),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text("Yes, Cancel"),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade50,
+                          foregroundColor: Colors.red,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                        child: const Text("Cancel Appointment"),
                       ),
-                      child: const Text("Cancel Appointment"),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -322,8 +460,14 @@ class _AppointmentCardState extends ConsumerState<AppointmentCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 10,),
-          Flexible(child: Text(value, textAlign: TextAlign.end,)),
+          const SizedBox(
+            width: 10,
+          ),
+          Flexible(
+              child: Text(
+            value,
+            textAlign: TextAlign.end,
+          )),
         ],
       ),
     );

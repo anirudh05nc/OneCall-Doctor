@@ -16,8 +16,10 @@ class Appointment {
   final String doctorEmail;
   final double price;
   final String? prescription;
-  final String? cancelledBy; // Added
-  final DateTime createdAt; // Added
+  final String? cancelledBy;
+  final DateTime createdAt;
+  final String? description;
+  final List<String>? healthFiles;
 
   Appointment({
     required this.id,
@@ -35,8 +37,10 @@ class Appointment {
     required this.status,
     required this.price,
     this.prescription,
-    this.cancelledBy, // Added
-    required this.createdAt, // Added
+    this.cancelledBy,
+    required this.createdAt,
+    this.description,
+    this.healthFiles,
   });
 
   factory Appointment.fromMap(Map<String, dynamic> data, String id) {
@@ -56,10 +60,14 @@ class Appointment {
       doctorEmail: data['doctorEmail'] ?? '',
       price: (data['price'] ?? 0.0).toDouble(),
       prescription: data['prescription'],
-      cancelledBy: data['cancelledBy'], // Added
+      cancelledBy: data['cancelledBy'],
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
-          : (data['date'] as Timestamp).toDate(), // Fallback to date
+          : (data['date'] as Timestamp).toDate(),
+      description: data['description'],
+      healthFiles: data['healthFiles'] != null
+          ? List<String>.from(data['healthFiles'])
+          : null,
     );
   }
 
@@ -79,8 +87,10 @@ class Appointment {
       'doctorEmail': doctorEmail,
       'price': price,
       'prescription': prescription,
-      'cancelledBy': cancelledBy, // Added
-      'createdAt': Timestamp.fromDate(createdAt), // Added
+      'cancelledBy': cancelledBy,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'description': description,
+      'healthFiles': healthFiles,
     };
   }
 }

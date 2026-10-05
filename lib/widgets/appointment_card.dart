@@ -72,21 +72,60 @@ class _AppointmentCardState extends ConsumerState<AppointmentCard> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: TextStyle(
-                          color: statusTextColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            statusText,
+                            style: TextStyle(
+                              color: statusTextColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (appointment.triageUrgency != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: appointment.triageUrgency!.toUpperCase() == 'HIGH'
+                                  ? Colors.red.shade50
+                                  : (appointment.triageUrgency!.toUpperCase() == 'MEDIUM'
+                                      ? Colors.orange.shade50
+                                      : Colors.green.shade50),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: appointment.triageUrgency!.toUpperCase() == 'HIGH'
+                                    ? Colors.red.shade300
+                                    : (appointment.triageUrgency!.toUpperCase() == 'MEDIUM'
+                                        ? Colors.orange.shade300
+                                        : Colors.green.shade300),
+                              ),
+                            ),
+                            child: Text(
+                              "${appointment.triageUrgency!.toUpperCase() == 'HIGH' ? '🚨' : (appointment.triageUrgency!.toUpperCase() == 'MEDIUM' ? '⚠️' : '✅')} ${appointment.triageUrgency!.toUpperCase()} URGENCY",
+                              style: TextStyle(
+                                color: appointment.triageUrgency!.toUpperCase() == 'HIGH'
+                                    ? Colors.red.shade800
+                                    : (appointment.triageUrgency!.toUpperCase() == 'MEDIUM'
+                                        ? Colors.orange.shade800
+                                        : Colors.green.shade800),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -135,6 +174,70 @@ class _AppointmentCardState extends ConsumerState<AppointmentCard> {
                   _buildDetailRow('Severity:', '${appointment.severity}/3.0'),
                   _buildDetailRow('Duration:',
                       '${appointment.duration} ${appointment.durationType}'),
+                  
+                  // AI Clinical Pre-Consultation Summary
+                  if (appointment.triageUrgency != null || appointment.patientQuery != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: appointment.triageUrgency?.toUpperCase() == 'HIGH'
+                            ? Colors.red.shade50
+                            : const Color(0xffF4FBF4),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: appointment.triageUrgency?.toUpperCase() == 'HIGH'
+                              ? Colors.red.shade200
+                              : const Color(0xff3A643B).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.auto_awesome, size: 16, color: appointment.triageUrgency?.toUpperCase() == 'HIGH' ? Colors.red : const Color(0xff3A643B)),
+                              const SizedBox(width: 6),
+                              Text(
+                                "AI Clinical Briefing",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: appointment.triageUrgency?.toUpperCase() == 'HIGH' ? Colors.red.shade900 : const Color(0xff3A643B),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (appointment.predictedSpecialty != null) ...[
+                            const SizedBox(height: 6),
+                            Text("Matched Specialty: ${appointment.predictedSpecialty}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                          ],
+                          if (appointment.patientQuery != null && appointment.patientQuery!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text("Symptoms: \"${appointment.patientQuery}\"", style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                          ],
+                          if (appointment.detectedRedFlags != null && appointment.detectedRedFlags!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 4,
+                              children: appointment.detectedRedFlags!.map((flag) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text("⚠️ $flag", style: TextStyle(fontSize: 11, color: Colors.red.shade900, fontWeight: FontWeight.bold)),
+                              )).toList(),
+                            ),
+                          ],
+                          if (appointment.clinicalAdvisory != null) ...[
+                            const SizedBox(height: 6),
+                            Text(appointment.clinicalAdvisory!, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   
                   const SizedBox(height: 16),

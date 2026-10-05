@@ -7,8 +7,6 @@ import 'package:onecall_doctor/services/email_service.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
-import 'package:onecall_doctor/models/doctor_model.dart';
-
 import 'package:onecall_doctor/providers/appointment_provider.dart';
 
 class AppointmentsScreen extends ConsumerStatefulWidget {
@@ -24,6 +22,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
 
   @override
   void initState() {
+    super.initState();
     _tabController = TabController(length: 3, vsync: this);
   }
 

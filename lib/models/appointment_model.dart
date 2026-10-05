@@ -19,6 +19,14 @@ class Appointment {
   final String? cancelledBy; // Added
   final DateTime createdAt; // Added
 
+  // AI-Assisted Clinical Triage & Specialty
+  final String? triageUrgency;
+  final double? triageConfidence;
+  final String? clinicalAdvisory;
+  final List<String>? detectedRedFlags;
+  final String? predictedSpecialty;
+  final String? patientQuery;
+
   Appointment({
     required this.id,
     required this.patientId,
@@ -37,6 +45,12 @@ class Appointment {
     this.prescription,
     this.cancelledBy, // Added
     required this.createdAt, // Added
+    this.triageUrgency,
+    this.triageConfidence,
+    this.clinicalAdvisory,
+    this.detectedRedFlags,
+    this.predictedSpecialty,
+    this.patientQuery,
   });
 
   factory Appointment.fromMap(Map<String, dynamic> data, String id) {
@@ -60,6 +74,14 @@ class Appointment {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : (data['date'] as Timestamp).toDate(), // Fallback to date
+      triageUrgency: data['triageUrgency'],
+      triageConfidence: (data['triageConfidence'] as num?)?.toDouble(),
+      clinicalAdvisory: data['clinicalAdvisory'],
+      detectedRedFlags: data['detectedRedFlags'] != null
+          ? List<String>.from(data['detectedRedFlags'])
+          : null,
+      predictedSpecialty: data['predictedSpecialty'],
+      patientQuery: data['patientQuery'],
     );
   }
 
@@ -81,6 +103,12 @@ class Appointment {
       'prescription': prescription,
       'cancelledBy': cancelledBy, // Added
       'createdAt': Timestamp.fromDate(createdAt), // Added
+      'triageUrgency': triageUrgency,
+      'triageConfidence': triageConfidence,
+      'clinicalAdvisory': clinicalAdvisory,
+      'detectedRedFlags': detectedRedFlags,
+      'predictedSpecialty': predictedSpecialty,
+      'patientQuery': patientQuery,
     };
   }
 }

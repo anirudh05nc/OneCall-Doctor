@@ -27,11 +27,11 @@ class CallScreen extends ConsumerWidget {
 
 
 
-    config.topMenuBarConfig.buttons = [
-      ZegoMenuBarButtonName.minimizingButton,
+    config.topMenuBar.buttons = [
+      ZegoCallMenuBarButtonName.minimizingButton,
     ];
 
-    config.bottomMenuBarConfig.extendButtons = [
+    config.bottomMenuBar.extendButtons = [
       GestureDetector(
         onTap: () {
           ref.read(completeAppointmentProvider(appointment));

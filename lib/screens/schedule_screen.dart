@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:onecall_doctor/models/doctor_model.dart';
 import 'package:onecall_doctor/providers/auth_provider.dart';
 import 'package:onecall_doctor/widgets/app_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';

@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:onecall_doctor/app_styles/app_colors.dart';
 import 'package:onecall_doctor/models/appointment_model.dart';
 import 'package:onecall_doctor/models/doctor_model.dart';

@@ -45,21 +45,16 @@ class Appointment {
     required this.status,
     required this.price,
     this.prescription,
-<<<<<<< HEAD
-    this.cancelledBy, // Added
-    required this.createdAt, // Added
+    this.cancelledBy,
+    required this.createdAt,
+    this.description,
+    this.healthFiles,
     this.triageUrgency,
     this.triageConfidence,
     this.clinicalAdvisory,
     this.detectedRedFlags,
     this.predictedSpecialty,
     this.patientQuery,
-=======
-    this.cancelledBy,
-    required this.createdAt,
-    this.description,
-    this.healthFiles,
->>>>>>> 05eb4043467ec2d9ca0716c0afc62efa2d958774
   });
 
   factory Appointment.fromMap(Map<String, dynamic> data, String id) {
@@ -82,8 +77,11 @@ class Appointment {
       cancelledBy: data['cancelledBy'],
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
-<<<<<<< HEAD
-          : (data['date'] as Timestamp).toDate(), // Fallback to date
+          : (data['date'] as Timestamp).toDate(),
+      description: data['description'],
+      healthFiles: data['healthFiles'] != null
+          ? List<String>.from(data['healthFiles'])
+          : null,
       triageUrgency: data['triageUrgency'],
       triageConfidence: (data['triageConfidence'] as num?)?.toDouble(),
       clinicalAdvisory: data['clinicalAdvisory'],
@@ -92,13 +90,6 @@ class Appointment {
           : null,
       predictedSpecialty: data['predictedSpecialty'],
       patientQuery: data['patientQuery'],
-=======
-          : (data['date'] as Timestamp).toDate(),
-      description: data['description'],
-      healthFiles: data['healthFiles'] != null
-          ? List<String>.from(data['healthFiles'])
-          : null,
->>>>>>> 05eb4043467ec2d9ca0716c0afc62efa2d958774
     );
   }
 
@@ -118,21 +109,16 @@ class Appointment {
       'doctorEmail': doctorEmail,
       'price': price,
       'prescription': prescription,
-<<<<<<< HEAD
-      'cancelledBy': cancelledBy, // Added
-      'createdAt': Timestamp.fromDate(createdAt), // Added
+      'cancelledBy': cancelledBy,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'description': description,
+      'healthFiles': healthFiles,
       'triageUrgency': triageUrgency,
       'triageConfidence': triageConfidence,
       'clinicalAdvisory': clinicalAdvisory,
       'detectedRedFlags': detectedRedFlags,
       'predictedSpecialty': predictedSpecialty,
       'patientQuery': patientQuery,
-=======
-      'cancelledBy': cancelledBy,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'description': description,
-      'healthFiles': healthFiles,
->>>>>>> 05eb4043467ec2d9ca0716c0afc62efa2d958774
     };
   }
 }

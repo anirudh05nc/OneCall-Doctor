@@ -254,8 +254,6 @@ class _AppointmentCardState extends ConsumerState<AppointmentCard> {
                   _buildDetailRow('Severity:', '${appointment.severity}/3.0'),
                   _buildDetailRow('Duration:',
                       '${appointment.duration} ${appointment.durationType}'),
-<<<<<<< HEAD
-                  
                   // AI Clinical Pre-Consultation Summary
                   if (appointment.triageUrgency != null || appointment.patientQuery != null) ...[
                     const SizedBox(height: 16),
@@ -319,16 +317,16 @@ class _AppointmentCardState extends ConsumerState<AppointmentCard> {
                       ),
                     ),
                   ],
-=======
-                  const SizedBox(height: 12),
-                  const Text('Description:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text(
-                    appointment.description ?? 'No description provided',
-                    style: TextStyle(color: Colors.grey[800]),
-                  ),
->>>>>>> 05eb4043467ec2d9ca0716c0afc62efa2d958774
+                  if (appointment.description != null && appointment.description!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Text('Description:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(
+                      appointment.description!,
+                      style: TextStyle(color: Colors.grey[800]),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   const Text('Health Files:',
                       style: TextStyle(fontWeight: FontWeight.bold)),

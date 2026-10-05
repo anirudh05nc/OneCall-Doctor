@@ -6,10 +6,6 @@ import 'package:onecall_doctor/providers/auth_provider.dart';
 import 'package:onecall_doctor/services/email_service.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
-<<<<<<< HEAD
-
-=======
->>>>>>> 05eb4043467ec2d9ca0716c0afc62efa2d958774
 import 'package:onecall_doctor/providers/appointment_provider.dart';
 
 class AppointmentsScreen extends ConsumerStatefulWidget {
